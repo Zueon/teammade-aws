@@ -20,7 +20,7 @@ jobs:
       
     - name: Publish Docker image to ECR registry 
       if: github.ref == 'refs/heads/main'
-      ...
+      
       
     - name: Sending deployment event to queue 
       if: github.ref == 'refs/heads/main' 
