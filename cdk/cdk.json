@@ -6,6 +6,9 @@
     "springProfile": "aws",
     "environmentName": "staging",
     "dockerImageUrl": "docker.io/hiho0701/todoapp-v1:latest",
-    "githubToken": "SECRET_OVERRIDDEN_BY_WORKFLOW"
+    "githubToken": "SECRET_OVERRIDDEN_BY_WORKFLOW",
+    "applicationDomain": "api.teammade.link",
+    "sslCertificateArn": "arn:aws:acm:us-east-1:503237308475:certificate/d7fe113a-71a0-43ad-ad5a-98231ef399aa",
+    "hostedZoneDomain": "teammade.link"
   }
 }

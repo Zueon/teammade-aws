@@ -14,3 +14,4 @@ cdk.out
 
 /deployment-sequencer-lambda/node_modules/
 /node_modules/
+/deployment-sequencer-lambda/dist/
