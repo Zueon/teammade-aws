@@ -11,7 +11,7 @@ public class RestTestController {
 
   @GetMapping("/get")
   public ResponseEntity<?> test(){
-    String message = "RestTestController - test()";
+    String message = "RestTestController - test() - cicdtest";
     return ResponseEntity.ok().body(message);
   }
 
