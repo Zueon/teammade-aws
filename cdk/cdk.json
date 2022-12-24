@@ -5,6 +5,7 @@
     "accountId": "503237308475",
     "springProfile": "aws",
     "environmentName": "staging",
-    "dockerImageUrl": "docker.io/hiho0701/todoapp-v1:latest"
+    "dockerImageUrl": "docker.io/hiho0701/todoapp-v1:latest",
+    "githubToken": "SECRET_OVERRIDDEN_BY_WORKFLOW"
   }
 }
