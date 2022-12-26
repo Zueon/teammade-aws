@@ -17,13 +17,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
-@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE + 10)
-@Configuration
+
 @RequiredArgsConstructor
 public class WebSecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Bean
+    /*@Bean
     public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
         security.cors() // WebMvcConfig에서 이미 설정했으므로 기본 cors 설정.
                 .and()
@@ -49,5 +48,5 @@ public class WebSecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
+    }*/
 }
