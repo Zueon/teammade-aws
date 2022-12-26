@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class RestTestController {
 
-  @GetMapping("/get2")
+  @GetMapping("/get3")
   public ResponseEntity<?> test(){
     String message = "RestTestController - test() - cicdtest";
     return ResponseEntity.ok().body(message);
