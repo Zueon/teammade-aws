@@ -168,11 +168,8 @@ public class ServiceApp {
         databaseOutputParameters.getDbName()));
     vars.put("SPRING_DATASOURCE_USERNAME",
       databaseSecret.secretValueFromJson("username").toString());
-    System.out.println("USERNAME : " + databaseSecret.secretValueFromJson("username").toString());
     vars.put("SPRING_DATASOURCE_PASSWORD",
       databaseSecret.secretValueFromJson("password").toString());
-    System.out.println("PASSWORD : " + databaseSecret.secretValueFromJson("password").toString());
-
     vars.put("COGNITO_CLIENT_ID", cognitoOutputParameters.getUserPoolClientId());
     vars.put("COGNITO_CLIENT_SECRET", cognitoOutputParameters.getUserPoolClientSecret());
     vars.put("COGNITO_USER_POOL_ID", cognitoOutputParameters.getUserPoolId());
