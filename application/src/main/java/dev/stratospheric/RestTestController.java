@@ -26,8 +26,8 @@ public class RestTestController {
     return null;
   }
 
- @PostMapping("/test")
-  public ResponseEntity<?> addTest(@RequestBody Test test){
+ @GetMapping("/test")
+  public ResponseEntity<?> addTest(){
     Test sample = new Test();
     sample.setMessage("test sample");
 
