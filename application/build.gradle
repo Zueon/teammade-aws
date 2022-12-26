@@ -27,6 +27,9 @@ dependencies {
   implementation 'org.webjars:font-awesome:5.15.3'
   developmentOnly 'org.springframework.boot:spring-boot-devtools'
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  implementation 'org.springframework.boot:spring-boot-starter-security'
+  implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+  implementation 'com.amazonaws:aws-java-sdk-cognitoidp'
 }
 
 dependencyManagement {
