@@ -1,8 +1,9 @@
 package dev.stratospheric.controller;
 
-import com.mztm.teammade.dto.*;
-import com.mztm.teammade.entity.Member;
-import com.mztm.teammade.service.MemberService;
+
+import dev.stratospheric.dto.*;
+import dev.stratospheric.entity.Member;
+import dev.stratospheric.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
