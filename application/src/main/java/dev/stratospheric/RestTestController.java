@@ -17,8 +17,7 @@ public class RestTestController {
 
   @GetMapping("/auth")
   public ResponseEntity<?> authtest(){
-
-
+    return null;
   }
 
 
