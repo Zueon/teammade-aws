@@ -4,6 +4,8 @@
     "region": "us-east-1",
     "accountId": "503237308475",
     "springProfile": "aws",
+    "applicationUrl": "https://api.teammade.link",
+    "loginPageDomainPrefix": "teammade-staging",
     "environmentName": "staging",
     "dockerRepositoryName": "todoapp",
     "dockerImageTag": "DYNAMICALLY_OVERRIDDEN_BY_WORKFLOW",
