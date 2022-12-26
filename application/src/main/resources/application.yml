@@ -10,5 +10,16 @@ cloud:
     sns:
       enabled: false
 
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+
+  application:
+    name: todoapp
+
 server:
   forward-headers-strategy: framework

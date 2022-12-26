@@ -15,5 +15,11 @@ public class RestTestController {
     return ResponseEntity.ok().body(message);
   }
 
+  @GetMapping("/auth")
+  public ResponseEntity<?> authtest(){
+
+
+  }
+
 
 }
