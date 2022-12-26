@@ -52,7 +52,7 @@ public class ServiceApp {
       .env(awsEnvironment)
       .build());
 
-    Service.DockerImageSource dockerImageSource = new Service.DockerImageSource(dockerImageUrl);
+    Service.DockerImageSource dockerImageSource = new Service.DockerImageSource(dockerRepositoryName, dockerImageTag);
     Network.NetworkOutputParameters networkOutputParameters = Network.getOutputParametersFromParameterStore(serviceStack, applicationEnvironment.getEnvironmentName());
     Service.ServiceInputParameters serviceInputParameters = new Service.ServiceInputParameters(dockerImageSource, environmentVariables(springProfile))
       .withHealthCheckIntervalSeconds(30);
