@@ -19,4 +19,4 @@ spring:
 
 
 custom:
-  use-cognito-as-identity-provider: true
+  use-cognito-as-identity-provider: false
