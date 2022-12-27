@@ -5,6 +5,7 @@ import dev.stratospheric.entity.TestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,9 +24,10 @@ public class RestTestController {
     return ResponseEntity.ok().body(message);
   }
 
+  @PreAuthorize("hasRole('ROLE_ADMIN')")
   @GetMapping("/auth")
   public ResponseEntity<?> authtest(){
-    return null;
+    return ResponseEntity.ok("ADMIN");
   }
 
  @GetMapping("/test")

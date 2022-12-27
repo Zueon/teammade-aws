@@ -11,7 +11,12 @@ spring:
         provider:
           cognito:
             issuerUri: ${COGNITO_PROVIDER_URL}
+      resource:
+        userInfoUri: https://teammade-staging.auth.us-east-1.amazoncognito.com/oauth2/userInfo
+        tokenInfoUri: https://teammade-staging.auth.us-east-1.amazoncognito.com/oauth2/token
+        jwk:
+          key-set-uri: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_mcWkJtqhA/.well-known/jwks.json
 
 
 custom:
-  use-cognito-as-identity-provider: false
+  use-cognito-as-identity-provider: true
