@@ -28,7 +28,7 @@ import java.util.Collections;
 public class WebSecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
 
-    private final ResourceServerProperties resource;
+
 
 
 
@@ -59,12 +59,5 @@ public class WebSecurityConfig {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-    @Bean
-  public TokenStore jwtTokenStore(){
-      return new JwkTokenStore(
-        Collections.singletonList(resource.getJwk().getKeySetUri()),
-        new CognitoAccessTokenConverter(),
-        null
-      );
-    }
+
 }
