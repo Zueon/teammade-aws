@@ -66,8 +66,5 @@ public class WebSecurityConfig {
         new CognitoAccessTokenConverter(),
         null
       );
-
-      )
-
     }
 }
