@@ -24,7 +24,12 @@ public class MemberAuthController {
 
         try {
             Member member = memberService.signup(req);
-            MemberDto response = new MemberDto(member);
+            MemberDto response = MemberDto.builder()
+              .mid(member.getMid())
+              .email(member.getEmail())
+              .name(member.getName())
+              .nickname(member.getNickname())
+              .build();
 
             return ResponseEntity.ok().body(response);
 
