@@ -26,7 +26,7 @@ public class MemberController {
     private final FileStorageService storageService;
 
 
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<?> getMember(){
         String email = SecurityUtil.getCurrentMemberEmail();
         Member member = memberService.getMemberByEmail(email);
