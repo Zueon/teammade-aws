@@ -11,3 +11,7 @@ spring:
         provider:
           cognito:
             issuerUri: ${COGNITO_PROVIDER_URL}
+
+
+custom:
+  use-cognito-as-identity-provider: false
