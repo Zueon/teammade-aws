@@ -69,6 +69,7 @@ public class ProjectController {
 
   @PostMapping
   @PreAuthorize("hasRole('USER')")
+  @Transactional
   public ResponseEntity<?> createPost(@RequestBody ProjectDTO dto) {
     String memberEmail = SecurityUtil.getCurrentMemberEmail();
     Member loginedMember = memberService.getMemberByEmail(memberEmail);
