@@ -13,9 +13,10 @@ cloud:
 spring:
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
 
 
   application:
