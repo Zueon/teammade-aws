@@ -50,7 +50,7 @@ public class Member implements UserDetails {
     @OneToMany(mappedBy = "receiver")
     private List<Notification> receiveList = new ArrayList<>();
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @Builder.Default
     private List<String> roles = new ArrayList<>();
 

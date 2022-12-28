@@ -41,7 +41,7 @@ public class WebSecurityConfig {
         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
         .authorizeRequests() // /와 /auth/** 경로는 인증 안해도 됨.
-        .antMatchers("/","/auth/**", "/project/list", "/study/list", "/member/", "/subscribe").permitAll()
+        .antMatchers("/**").permitAll()
 //                .antMatchers("/project/**", "/study/**", "/member/**").hasRole("USER")
         .anyRequest()
         .authenticated()
