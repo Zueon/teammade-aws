@@ -4,16 +4,14 @@ import dev.stratospheric.dto.ApplyDto;
 import dev.stratospheric.dto.NotificationDto;
 import dev.stratospheric.dto.ResponseDTO;
 import dev.stratospheric.entity.Member;
+import dev.stratospheric.security.JwtTokenProvider;
 import dev.stratospheric.service.MemberService;
 import dev.stratospheric.service.NotificationService;
 import dev.stratospheric.utils.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
@@ -23,73 +21,75 @@ import java.util.concurrent.ConcurrentHashMap;
 @Log4j2
 @RestController
 public class NotificationController {
-    private final MemberService memberService;
-    private final NotificationService notificationService;
-    public static Map<Long, SseEmitter> sseEmitters = new ConcurrentHashMap<>();
+  private final MemberService memberService;
+  private final NotificationService notificationService;
+  private final JwtTokenProvider tokenProvider;
+  public static Map<Long, SseEmitter> sseEmitters = new ConcurrentHashMap<>();
 
 
-    @GetMapping("/subscribe")
-    public SseEmitter subscribe() {
-        String email = SecurityUtil.getCurrentMemberEmail();
-        Member subscriber = memberService.getMemberByEmail(email);
-        Long subscriberId = subscriber.getMid();
+  @GetMapping("/subscribe")
+  public SseEmitter subscribe(@RequestParam String token) {
 
-        log.info("subscriber : " + subscriberId);
+    String email = tokenProvider.validateAndGetUserEmail(token);
+    Member subscriber = memberService.getMemberByEmail(email);
+    Long subscriberId = subscriber.getMid();
 
-        SseEmitter sseEmitter = new SseEmitter(Long.MAX_VALUE);
+    log.info("subscriber : " + subscriberId);
 
-        try {
-            sseEmitter.send(SseEmitter.event().name("connect").data("connection established"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    SseEmitter sseEmitter = new SseEmitter(Long.MAX_VALUE);
 
-        sseEmitters.put(subscriberId, sseEmitter);
-
-        sseEmitter.onTimeout(() -> sseEmitters.remove(subscriberId));
-        sseEmitter.onError((e) -> sseEmitters.remove(subscriberId));
-
-        return sseEmitter;
+    try {
+      sseEmitter.send(SseEmitter.event().name("connect").data("connection established"));
+    } catch (Exception e) {
+      e.printStackTrace();
     }
 
-    @PostMapping("/apply")
-    public ResponseEntity<?> apply(@RequestBody ApplyDto applyDto) {
+    sseEmitters.put(subscriberId, sseEmitter);
 
-            NotificationDto applyNote = notificationService.notifyApplyEvent(applyDto);
-            Long receiverId = applyNote.getReceiverId();
+    sseEmitter.onTimeout(() -> sseEmitters.remove(subscriberId));
+    sseEmitter.onError((e) -> sseEmitters.remove(subscriberId));
 
-            if (sseEmitters.containsKey(receiverId)) {
-                SseEmitter sseEmitter = sseEmitters.get(receiverId);
-                try {
-                    sseEmitter.send(SseEmitter.event().name("apply").data(applyNote));
+    return sseEmitter;
+  }
+
+  @PostMapping("/apply")
+  public ResponseEntity<?> apply(@RequestBody ApplyDto applyDto) {
+
+    NotificationDto applyNote = notificationService.notifyApplyEvent(applyDto);
+    Long receiverId = applyNote.getReceiverId();
+
+    if (sseEmitters.containsKey(receiverId)) {
+      SseEmitter sseEmitter = sseEmitters.get(receiverId);
+      try {
+        sseEmitter.send(SseEmitter.event().name("apply").data(applyNote));
 
 
-                } catch (Exception e) {
-                    sseEmitters.remove(receiverId);
-                    return ResponseEntity.badRequest().body(e.getMessage());
-                }
-            }
-        ResponseDTO response = ResponseDTO.builder().data(applyNote).build();
-        return ResponseEntity.ok().body(response);
+      } catch (Exception e) {
+        sseEmitters.remove(receiverId);
+        return ResponseEntity.badRequest().body(e.getMessage());
+      }
     }
+    ResponseDTO response = ResponseDTO.builder().data(applyNote).build();
+    return ResponseEntity.ok().body(response);
+  }
 
-    @PostMapping("/accept")
-    public ResponseEntity<?> accept(@RequestBody ApplyDto applyDto){
-        NotificationDto acceptNote = notificationService.notifyAcceptEvent(applyDto);
-        Long receiverId = acceptNote.getReceiverId();
+  @PostMapping("/accept")
+  public ResponseEntity<?> accept(@RequestBody ApplyDto applyDto){
+    NotificationDto acceptNote = notificationService.notifyAcceptEvent(applyDto);
+    Long receiverId = acceptNote.getReceiverId();
 
-        if (sseEmitters.containsKey(receiverId)) {
-            SseEmitter sseEmitter = sseEmitters.get(receiverId);
-            try {
-                sseEmitter.send(SseEmitter.event().name("accept").data(acceptNote));
-            } catch (Exception e) {
-                sseEmitters.remove(receiverId);
-                return ResponseEntity.badRequest().body(e.getMessage());
-            }
-        }
-        ResponseDTO response = ResponseDTO.builder().data(acceptNote).build();
-        return ResponseEntity.ok().body(response);
-
+    if (sseEmitters.containsKey(receiverId)) {
+      SseEmitter sseEmitter = sseEmitters.get(receiverId);
+      try {
+        sseEmitter.send(SseEmitter.event().name("accept").data(acceptNote));
+      } catch (Exception e) {
+        sseEmitters.remove(receiverId);
+        return ResponseEntity.badRequest().body(e.getMessage());
+      }
     }
+    ResponseDTO response = ResponseDTO.builder().data(acceptNote).build();
+    return ResponseEntity.ok().body(response);
+
+  }
 
 }

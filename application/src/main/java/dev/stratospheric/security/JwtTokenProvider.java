@@ -106,4 +106,14 @@ public class JwtTokenProvider {
             return e.getClaims();
         }
     }
+
+
+  public String validateAndGetUserEmail(String token) {
+    Claims claims = Jwts.parser()
+      .setSigningKey(key)
+      .parseClaimsJws(token)
+      .getBody();
+
+    return  claims.getSubject();
+  }
 }

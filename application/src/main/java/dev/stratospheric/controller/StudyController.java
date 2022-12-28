@@ -20,41 +20,41 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RequestMapping("/study")
 public class StudyController {
-    private final PostService postService;
-    private final MemberService memberService;
+  private final PostService postService;
+  private final MemberService memberService;
 
 
-    @GetMapping
-    public ResponseEntity<?> getStudies(){
-        List<Study> studyEntities =  postService.getStudyList();
-        List<StudyDto> studyList = studyEntities.stream().map(StudyDto::new).collect(Collectors.toList());
+  @GetMapping("list")
+  public ResponseEntity<?> getStudies() {
+    List<Study> studyEntities = postService.getStudyList();
+    List<StudyDto> studyList = studyEntities.stream().map(StudyDto::new).collect(Collectors.toList());
 
-        ResponseDTO<StudyDto> response = ResponseDTO.<StudyDto>builder().data(studyList).build();
+    ResponseDTO<StudyDto> response = ResponseDTO.<StudyDto>builder().data(studyList).build();
 
-        return ResponseEntity.ok().body(response);
+    return ResponseEntity.ok().body(response);
+  }
+
+  @PostMapping("/create")
+  public ResponseEntity createStudy(@RequestBody StudyDto dto) {
+    String email = SecurityUtil.getCurrentMemberEmail();
+    Member member = memberService.getMemberByEmail(email);
+    try {
+
+      Study study = new Study(dto);
+
+      study.addHost(member);
+
+      Study createStudy = postService.createStudy(study);
+      StudyDto createStudyDto = new StudyDto(createStudy);
+
+      ResponseDTO<StudyDto> response = ResponseDTO.<StudyDto>builder().data(createStudyDto).build();
+      return ResponseEntity.ok().body(response);
+
+    } catch (Exception e) {
+      String err = e.getMessage();
+      ResponseDTO<StudyDto> response = ResponseDTO.<StudyDto>builder().error(err).build();
+
+      return ResponseEntity.badRequest().body(response);
     }
-
-    @PostMapping("/create")
-    public ResponseEntity createStudy(@RequestBody StudyDto dto) {
-        String email = SecurityUtil.getCurrentMemberEmail();
-        Member member = memberService.getMemberByEmail(email);
-        try {
-
-            Study study = new Study(dto);
-
-            study.addHost(member);
-
-            Study createStudy = postService.createStudy(study);
-            StudyDto createStudyDto = new StudyDto(createStudy);
-
-            ResponseDTO<StudyDto> response = ResponseDTO.<StudyDto>builder().data(createStudyDto).build();
-            return ResponseEntity.ok().body(response);
-
-        } catch (Exception e){
-            String err = e.getMessage();
-            ResponseDTO<StudyDto> response = ResponseDTO.<StudyDto>builder().error(err).build();
-
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
+  }
 }

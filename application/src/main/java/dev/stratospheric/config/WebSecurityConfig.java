@@ -31,23 +31,24 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
-        security.cors() // WebMvcConfig에서 이미 설정했으므로 기본 cors 설정.
-                .and()
-                .csrf()// csrf는 현재 사용하지 않으므로 disable
-                .disable()
-                .httpBasic()// token을 사용하므로 basic 인증 disable
-                .disable()
-                .sessionManagement()  // session 기반이 아님을 선언
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authorizeRequests() // /와 /auth/** 경로는 인증 안해도 됨.
-                .antMatchers("/","/api/**","/auth/**", "/project/list", "/study").permitAll()
-                .anyRequest()
-                .authenticated()
-                .and()
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+      security.cors() // WebMvcConfig에서 이미 설정했으므로 기본 cors 설정.
+        .and()
+        .csrf()// csrf는 현재 사용하지 않으므로 disable
+        .disable()
+        .httpBasic()// token을 사용하므로 basic 인증 disable
+        .disable()
+        .sessionManagement()  // session 기반이 아님을 선언
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
+        .authorizeRequests() // /와 /auth/** 경로는 인증 안해도 됨.
+        .antMatchers("/","/auth/**", "/project/list", "/study/list", "/member/", "/subscribe").permitAll()
+//                .antMatchers("/project/**", "/study/**", "/member/**").hasRole("USER")
+        .anyRequest()
+        .authenticated()
+        .and()
+        .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
-        return security.build();
+      return security.build();
 
     }
 

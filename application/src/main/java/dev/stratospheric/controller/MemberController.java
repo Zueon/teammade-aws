@@ -4,6 +4,8 @@ package dev.stratospheric.controller;
 import dev.stratospheric.dto.*;
 import dev.stratospheric.entity.Member;
 import dev.stratospheric.entity.Notification;
+import dev.stratospheric.entity.Project;
+import dev.stratospheric.persistence.ProjectRepository;
 import dev.stratospheric.service.FileStorageService;
 import dev.stratospheric.service.MemberService;
 import dev.stratospheric.utils.SecurityUtil;
@@ -22,82 +24,89 @@ import java.util.stream.Collectors;
 @RequestMapping("/member")
 @RequiredArgsConstructor
 public class MemberController {
-    private final MemberService memberService;
-    private final FileStorageService storageService;
+  private final MemberService memberService;
+  private final FileStorageService storageService;
+  private final ProjectRepository projectRepository;
 
 
-    @GetMapping
-    public ResponseEntity<?> getMember(){
-        String email = SecurityUtil.getCurrentMemberEmail();
-        Member member = memberService.getMemberByEmail(email);
-        log.info(member);
+  @GetMapping("/")
+  public ResponseEntity<?> getMember(){
+    String email = SecurityUtil.getCurrentMemberEmail();
+    Member member = memberService.getMemberByEmail(email);
+    log.info(member);
 
-        ProjectDTO projectDto = null;
-        StudyDto studyDto = null;
-        ResumeDto resumeDto = null;
+    ProjectDTO projectDto = null;
+    StudyDto studyDto = null;
+    ResumeDto resumeDto = null;
 
-        if (member.getProject() != null){
-             projectDto = ProjectDTO.builder()
-                    .title(member.getProject().getTitle())
-                    .build();
-        }
-
-        if (member.getStudy() != null){
-            studyDto = StudyDto.builder()
-                    .title(member.getStudy().getTitle())
-                    .build();
-        }
-
-        if (member.getResume() != null){
-            resumeDto = storageService.getResume(member);
-        }
-
-        MemberDto dto = MemberDto.builder()
-                .address(member.getEmail())
-                .email(member.getEmail())
-                .gender(member.getGender())
-                .name(member.getName())
-                .nickname(member.getNickname())
-                .project(projectDto)
-                .study(studyDto)
-                .resume(resumeDto)
-                .build();
-
-
-        ResponseDTO<MemberDto> response = ResponseDTO.<MemberDto>builder().data(dto).build();
-
-        return ResponseEntity.ok().body(response);
-
+    if (member.getProject() != null){
+      Project proj = projectRepository.findById(member.getProject().getId()).orElseThrow(()->new IllegalArgumentException("존재하지 !"));
+      projectDto = ProjectDTO.builder()
+        .members(proj.getMembers().stream().map(MemberDto::new).collect(Collectors.toList()))
+        .todos(proj.getTodos().stream().map(TodoDto::new).collect(Collectors.toList()))
+        .title(member.getProject().getTitle())
+        .pid(member.getProject().getId())
+        .hostId(member.getProject().getHost().getMid())
+        .build();
     }
 
-    @PostMapping("/uploadResume")
-    public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file) {
-        String email = SecurityUtil.getCurrentMemberEmail();
-        String message = "";
-
-        try {
-            storageService.storeResume(file, email);
-
-            message = "파일 업로드를 성공하였습니다: " + file.getOriginalFilename();
-            return ResponseEntity.status(HttpStatus.OK).body(ResponseDTO.builder().message(message).build());
-        } catch (Exception e) {
-            message = "파일 업로드를 실패하였습니다: " + file.getOriginalFilename() + ". Error: " + e.getMessage();
-            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(ResponseDTO.builder().message(message).build());
-        }
+    if (member.getStudy() != null){
+      studyDto = StudyDto.builder()
+        .title(member.getStudy().getTitle())
+        .build();
     }
 
-    @GetMapping("/sentNotifications")
-    public ResponseEntity<?> sentList(){
-        Member member=memberService.getMemberByEmail(SecurityUtil.getCurrentMemberEmail());
-        List<Notification> entities = member.getSendList();
-        List<NotificationDto> sentNotifications = entities.stream().map(NotificationDto::new).collect(Collectors.toList());
-        ResponseDTO<NotificationDto> response = ResponseDTO.<NotificationDto>builder().data(sentNotifications).build();
-
-        return ResponseEntity.ok().body(response);
+    if (member.getResume() != null){
+      resumeDto = storageService.getResume(member);
     }
 
+    MemberDto dto = MemberDto.builder()
+      .address(member.getEmail())
+      .email(member.getEmail())
+      .gender(member.getGender())
+      .name(member.getName())
+      .nickname(member.getNickname())
+      .project(projectDto)
+      .study(studyDto)
+      .resume(resumeDto)
+      .mid(member.getMid())
+      .build();
 
-    public void updateMember(){}
 
-    public void deleteMember(){}
+    ResponseDTO<MemberDto> response = ResponseDTO.<MemberDto>builder().data(dto).build();
+
+    return ResponseEntity.ok().body(response);
+
+  }
+
+  @PostMapping("/uploadResume")
+  public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file) {
+    String email = SecurityUtil.getCurrentMemberEmail();
+    String message = "";
+
+    try {
+      storageService.storeResume(file, email);
+
+      message = "파일 업로드를 성공하였습니다: " + file.getOriginalFilename();
+      return ResponseEntity.status(HttpStatus.OK).body(ResponseDTO.builder().message(message).build());
+    } catch (Exception e) {
+      message = "파일 업로드를 실패하였습니다: " + file.getOriginalFilename() + ". Error: " + e.getMessage();
+      return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(ResponseDTO.builder().message(message).build());
+    }
+  }
+
+  @GetMapping("/sentNotifications")
+  public ResponseEntity<?> sentList(){
+    Member member=memberService.getMemberByEmail(SecurityUtil.getCurrentMemberEmail());
+    List<Notification> entities = member.getSendList();
+    List<NotificationDto> sentNotifications = entities.stream().map(NotificationDto::new).collect(Collectors.toList());
+    ResponseDTO<NotificationDto> response = ResponseDTO.<NotificationDto>builder().data(sentNotifications).build();
+
+    return ResponseEntity.ok().body(response);
+  }
+
+
+  public void updateMember(){}
+
+  public void deleteMember(){}
 }

@@ -41,15 +41,15 @@ public class MemberServiceImpl implements MemberService {
         return tokenInfo;
     }
 
-    @Override
-    @Transactional
-    public Member signup(MemberSignupReqDto req) {
-        req.setPassword(passwordEncoder.encode(req.getPassword()));
-        if (memberRepository.findByEmail(req.getEmail()).orElse(null)==null){
-            return memberRepository.save(req.toEntity());
-        }
-        throw new RuntimeException("Fail to Signup");
+  @Override
+  @Transactional
+  public Member signup(MemberSignupReqDto req) {
+    req.setPassword(passwordEncoder.encode(req.getPassword()));
+    if (memberRepository.findByEmail(req.getEmail()).orElse(null)==null){
+      return memberRepository.save(req.toEntity());
     }
+    return memberRepository.save(req.toEntity());
+  }
 
     @Override
     public Member getMemberByEmail(String email) {

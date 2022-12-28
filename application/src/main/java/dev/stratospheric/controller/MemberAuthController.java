@@ -40,21 +40,28 @@ public class MemberAuthController {
 
     }
 
-    @PostMapping("/signin")
-    public ResponseEntity<?> login(@RequestBody MemberLoginReqDto memberLoginRequestDto) {
-        String email = memberLoginRequestDto.getEmail();
-        String password = memberLoginRequestDto.getPassword();
-        try {
-            TokenInfo tokenInfo = memberService.login(email, password);
-            return ResponseEntity.ok().body(tokenInfo);
+  @PostMapping("/signin")
+  public ResponseEntity<?> login(@RequestBody MemberLoginReqDto memberLoginRequestDto) {
+    String email = memberLoginRequestDto.getEmail();
+    String password = memberLoginRequestDto.getPassword();
+    try {
+      TokenInfo tokenInfo = memberService.login(email, password);
+      Member member = memberService.getMemberByEmail(email);
+      SigninResDTO signinResDTO = new SigninResDTO();
+      signinResDTO.setAccessToken(tokenInfo.getAccessToken());
+      signinResDTO.setEmail(email);
+      signinResDTO.setNickname(member.getNickname());
+      signinResDTO.setMid(member.getMid());
 
-        } catch (Exception e){
-            ResponseDTO responseDTO = ResponseDTO.builder()
-                    .error(e.getMessage()).build();
-            return ResponseEntity
-                    .badRequest()
-                    .body(responseDTO);
-        }
+      return ResponseEntity.ok().body(signinResDTO);
 
+    } catch (Exception e){
+      ResponseDTO responseDTO = ResponseDTO.builder()
+        .error(e.getMessage()).build();
+      return ResponseEntity
+        .badRequest()
+        .body(responseDTO);
     }
+
+  }
 }

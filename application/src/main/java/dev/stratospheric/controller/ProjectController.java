@@ -31,240 +31,250 @@ import java.util.stream.Collectors;
 @RequestMapping("/project")
 public class ProjectController {
 
-    private final PostService postService;
-    private final MemberService memberService;
-    private final FileStorageService storageService;
-    private final TodoService todoService;
-    private final ProjectRepository projectRepository;
+  private final PostService postService;
+  private final MemberService memberService;
+  private final FileStorageService storageService;
+  private final TodoService todoService;
+  private final ProjectRepository projectRepository;
 
 
 
 
-    // 프로젝트 리스트 받기
-    @GetMapping("/list")
-    public ResponseEntity<?> getProjects() {
-        // Entities 받은 후 이를 바로 클라이언트로 반환 X
-        // Entity를 DTO로 변환하여 보내야할 정보만 반환한다.
-        List<Project> projectEntities = postService.getProjectList();
-        List<ProjectDTO> projectList = projectEntities.stream().map(ProjectDTO::new).collect(Collectors.toList());
+  // 프로젝트 리스트 받기
+  @GetMapping("/list")
+  public ResponseEntity<?> getProjects() {
+    // Entities 받은 후 이를 바로 클라이언트로 반환 X
+    // Entity를 DTO로 변환하여 보내야할 정보만 반환한다.
+    List<Project> projectEntities = postService.getProjectList();
+    List<ProjectDTO> projectList = projectEntities.stream().map(ProjectDTO::new).collect(Collectors.toList());
 
-        // Response를 위한 DTO의 data에 담아서 전달
-        ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(projectList).build();
+    // Response를 위한 DTO의 data에 담아서 전달
+    ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(projectList).build();
 
-        return ResponseEntity.ok().body(response);
+    return ResponseEntity.ok().body(response);
+  }
+
+  @GetMapping("/{pid}")
+  public ResponseEntity<?> getProject(@PathVariable Long pid){
+    Project project = postService.getProject(pid);
+    ProjectDTO projectDTO = new ProjectDTO(project);
+
+    ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(projectDTO).build();
+
+    return ResponseEntity.ok().body(response);
+
+  }
+
+  @PostMapping
+  @PreAuthorize("hasRole('USER')")
+  public ResponseEntity<?> createPost(@RequestBody ProjectDTO dto) {
+    String memberEmail = SecurityUtil.getCurrentMemberEmail();
+    Member loginedMember = memberService.getMemberByEmail(memberEmail);
+    try {
+
+      Project project = new Project(dto);
+      project.addHost(loginedMember);
+      project.addMember(loginedMember);
+
+      Project createProject = postService.createProject(project);
+      ProjectDTO createProjectDTO = new ProjectDTO(createProject);
+
+      ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(createProjectDTO).build();
+      return ResponseEntity.ok().body(response);
+
+    } catch (Exception e) {
+      String err = e.getMessage();
+      ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().error(err).build();
+
+      return ResponseEntity.badRequest().body(response);
+    }
+  }
+
+  @PutMapping
+  @PreAuthorize("hasRole('HOST')")
+  public ResponseEntity<?> updatePost(@RequestBody ProjectDTO dto) {
+
+    try {
+      Project project = new Project(dto);
+
+      Project updatedProject = postService.updateProject(project);
+      ProjectDTO updatedProjectDTO = new ProjectDTO(updatedProject);
+
+      ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(updatedProjectDTO).build();
+      return ResponseEntity.ok().body(response);
+
+    } catch (Exception e) {
+      String err = e.getMessage();
+      ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().error(err).build();
+
+      return ResponseEntity.badRequest().body(response);
+    }
+  }
+
+  @DeleteMapping
+  @PreAuthorize("hasRole('HOST')")
+  public ResponseEntity<?> deletePost (@RequestBody ProjectDTO dto){
+    try {
+      Project projectEntity = new Project(dto);
+      List<Project> entities = postService.deleteProject(projectEntity);
+      List<ProjectDTO> projectList = entities.stream().map(ProjectDTO::new).collect(Collectors.toList());
+
+      ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(projectList).build();
+
+      return ResponseEntity.ok().body(response);
+
+    } catch (Exception e){
+      String err = e.getMessage();
+      ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().error(err).build();
+
+      return ResponseEntity.badRequest().body(response);
     }
 
+  }
+  //--------------------------- 프로젝트 파일 처리 ----------------------------//
 
-    @PostMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> createPost(@RequestBody ProjectDTO dto) {
-        String memberEmail = SecurityUtil.getCurrentMemberEmail();
-        Member loginedMember = memberService.getMemberByEmail(memberEmail);
-        try {
+  private List<FileDto> getProjectFileList(Project project) {
+    List<FileDto> files = storageService.getAllFiles(project).map(dbFile -> {
+      String fileDownloadUri = ServletUriComponentsBuilder
+        .fromCurrentContextPath()
+        .path("/files/")
+        .path(dbFile.getId())
+        .toUriString();
 
-            Project project = new Project(dto);
-            project.addHost(loginedMember);
-            project.addMember(loginedMember);
+      return new FileDto(
+        dbFile.getName(),
+        fileDownloadUri,
+        dbFile.getType(),
+        dbFile.getData().length);
+    }).collect(Collectors.toList());
+    return files;
+  }
 
-            Project createProject = postService.createProject(project);
-            ProjectDTO createProjectDTO = new ProjectDTO(createProject);
 
-            ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(createProjectDTO).build();
-            return ResponseEntity.ok().body(response);
+  @PostMapping("/{pid}/files/upload")
+  public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file, @PathVariable("pid") Long pid) {
+    String message = "";
 
-        } catch (Exception e) {
-            String err = e.getMessage();
-            ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().error(err).build();
+    try {
+      log.info("uploadFile");
+      storageService.store(file, pid);
 
-            return ResponseEntity.badRequest().body(response);
-        }
+      message = "Uploaded the file successfully: " + file.getOriginalFilename();
+      return ResponseEntity.status(HttpStatus.OK).body(ResponseDTO.builder().message(message).build());
+    } catch (Exception e) {
+      message = "Could not upload the file: " + file.getOriginalFilename() + ". Error: " + e.getMessage();
+      return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(ResponseDTO.builder().message(message).build());
     }
+  }
 
-    @PutMapping
-    @PreAuthorize("hasRole('HOST')")
-    public ResponseEntity<?> updatePost(@RequestBody ProjectDTO dto) {
 
-        try {
-            Project project = new Project(dto);
+  @GetMapping("/{pid}/files")
+  public ResponseEntity<List<FileDto>> getListDBFiles(@PathVariable("pid") Long pid) {
+    Project project = projectRepository.findById(pid).get();
+    List<FileDto> files = getProjectFileList(project);
 
-            Project updatedProject = postService.updateProject(project);
-            ProjectDTO updatedProjectDTO = new ProjectDTO(updatedProject);
+    return ResponseEntity.status(HttpStatus.OK).body(files);
+  }
 
-            ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(updatedProjectDTO).build();
-            return ResponseEntity.ok().body(response);
+  @DeleteMapping("/{pid}/files")
+  public ResponseEntity<List<FileDto>> deleteFile(@PathVariable Long pid, @RequestParam("fileId") String fileId){
+    Project project = projectRepository.findById(pid).get();
 
-        } catch (Exception e) {
-            String err = e.getMessage();
-            ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().error(err).build();
+    storageService.deleteFile(fileId);
+    List<FileDto> files = getProjectFileList(project);
 
-            return ResponseEntity.badRequest().body(response);
-        }
+    return ResponseEntity.status(HttpStatus.OK).body(files);
+
+  }
+
+
+  //--------------------------- 프로젝트 파일 처리 END ----------------------------//
+
+
+
+  //--------------------------- 프로젝트 TODOLIST 처리 ----------------------------//
+
+  @GetMapping("/{pid}/todos")
+  public ResponseEntity<?> retrieveTodoList(@PathVariable Long pid) {
+    Project temp = projectRepository.findById(pid).get();
+
+    List<Todo> entities = todoService.retrieve(temp);
+    List<TodoDto> dtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
+
+    ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(dtos).build();
+
+    return ResponseEntity.ok(response);
+  }
+
+
+  @PostMapping("/{pid}/todos")
+  public ResponseEntity<?> createTodo(@RequestBody TodoDto dto, @PathVariable Long pid) {
+    Project temp = projectRepository.findById(pid).get();
+    Member creator = memberService.getMemberByEmail(SecurityUtil.getCurrentMemberEmail());
+    String creatorNickname = creator.getNickname();
+
+    try {
+
+      Todo entity = TodoDto.toEntity(dto);
+      entity.setCreator(creatorNickname);
+      temp.addTodo(entity);
+
+      List<Todo> entities = todoService.create(entity);
+
+      List<TodoDto> dtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
+
+      ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(dtos).build();
+
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      String err = e.getMessage();
+      ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().error(err).build();
+
+      return ResponseEntity.badRequest().body(response);
     }
+  }
 
-    @DeleteMapping
-    @PreAuthorize("hasRole('HOST')")
-    public ResponseEntity<?> deletePost (@RequestBody ProjectDTO dto){
-        try {
-            Project projectEntity = new Project(dto);
-            List<Project> entities = postService.deleteProject(projectEntity);
-            List<ProjectDTO> projectList = entities.stream().map(ProjectDTO::new).collect(Collectors.toList());
+  @PutMapping("/{pid}/todos")
+  public ResponseEntity<?> updateTodo(@RequestBody TodoDto reqDto,  @PathVariable Long pid){
+    Todo todoEntity = TodoDto.toEntity(reqDto);
 
-            ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().data(projectList).build();
+    try{
+      todoEntity.setProject(projectRepository.findById(pid).get());
+      List<Todo> entities = todoService.update(todoEntity);
+      List<TodoDto> resDtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
 
-            return ResponseEntity.ok().body(response);
+      ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(resDtos).build();
 
-        } catch (Exception e){
-            String err = e.getMessage();
-            ResponseDTO<ProjectDTO> response = ResponseDTO.<ProjectDTO>builder().error(err).build();
+      return ResponseEntity.ok().body(response);
+    } catch (Exception e){
+      String error = e.getMessage();
+      log.error(error);
+      ResponseDTO response = ResponseDTO.builder().error(error).build();
 
-            return ResponseEntity.badRequest().body(response);
-        }
-
+      return ResponseEntity.badRequest().body(response);
     }
-    //--------------------------- 프로젝트 파일 처리 ----------------------------//
+  }
 
-    private List<FileDto> getProjectFileList(Project project) {
-        List<FileDto> files = storageService.getAllFiles(project).map(dbFile -> {
-            String fileDownloadUri = ServletUriComponentsBuilder
-                    .fromCurrentContextPath()
-                    .path("/files/")
-                    .path(dbFile.getId())
-                    .toUriString();
 
-            return new FileDto(
-                    dbFile.getName(),
-                    fileDownloadUri,
-                    dbFile.getType(),
-                    dbFile.getData().length);
-        }).collect(Collectors.toList());
-        return files;
+  @DeleteMapping("/{pid}/todos")
+  public ResponseEntity<?> deleteTodo(@RequestBody TodoDto reqDto, @PathVariable Long pid){
+    try{
+      Todo todoEntity = TodoDto.toEntity(reqDto);
+      todoEntity.setProject(projectRepository.findById(pid).get());
+
+      List<Todo> entities = todoService.delete(todoEntity);
+      List<TodoDto> resDtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
+
+      ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(resDtos).build();
+
+      return ResponseEntity.ok().body(response);
+    } catch (Exception e){
+      String error = e.getMessage();
+      ResponseDTO response = ResponseDTO.builder().error(error).build();
+      return ResponseEntity.badRequest().body(response);
     }
-
-
-    @PostMapping("/{pid}/files/upload")
-    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file, @PathVariable("pid") Long pid) {
-        String message = "";
-
-        try {
-            log.info("uploadFile");
-            storageService.store(file, pid);
-
-            message = "Uploaded the file successfully: " + file.getOriginalFilename();
-            return ResponseEntity.status(HttpStatus.OK).body(ResponseDTO.builder().message(message).build());
-        } catch (Exception e) {
-            message = "Could not upload the file: " + file.getOriginalFilename() + ". Error: " + e.getMessage();
-            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(ResponseDTO.builder().message(message).build());
-        }
-    }
-
-
-    @GetMapping("/{pid}/files")
-    public ResponseEntity<List<FileDto>> getListDBFiles(@PathVariable("pid") Long pid) {
-        Project project = projectRepository.findById(pid).get();
-        List<FileDto> files = getProjectFileList(project);
-
-        return ResponseEntity.status(HttpStatus.OK).body(files);
-    }
-
-    @DeleteMapping("/{pid}/files")
-    public ResponseEntity<List<FileDto>> deleteFile(@PathVariable Long pid, @RequestParam("fileId") String fileId){
-        Project project = projectRepository.findById(pid).get();
-
-        storageService.deleteFile(fileId);
-        List<FileDto> files = getProjectFileList(project);
-
-        return ResponseEntity.status(HttpStatus.OK).body(files);
-
-    }
-
-
-    //--------------------------- 프로젝트 파일 처리 END ----------------------------//
-
-
-
-    //--------------------------- 프로젝트 TODOLIST 처리 ----------------------------//
-
-    @GetMapping("/{pid}/todos")
-    public ResponseEntity<?> retrieveTodoList(@PathVariable Long pid) {
-        Project temp = projectRepository.findById(pid).get();
-
-        List<Todo> entities = todoService.retrieve(temp);
-        List<TodoDto> dtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
-
-        ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(dtos).build();
-
-        return ResponseEntity.ok(response);
-    }
-
-
-    @PostMapping("/{pid}/todos")
-    public ResponseEntity<?> createTodo(@RequestBody TodoDto dto, @PathVariable Long pid) {
-        Project temp = projectRepository.findById(pid).get();
-        Member creator = memberService.getMemberByEmail(SecurityUtil.getCurrentMemberEmail());
-        String creatorNickname = creator.getNickname();
-
-        try {
-
-            Todo entity = TodoDto.toEntity(dto);
-            entity.setCreator(creatorNickname);
-            temp.addTodo(entity);
-
-            List<Todo> entities = todoService.create(entity);
-
-            List<TodoDto> dtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
-
-            ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(dtos).build();
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            String err = e.getMessage();
-            ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().error(err).build();
-
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    @PutMapping("/{pid}/todos")
-    public ResponseEntity<?> updateTodo(@RequestBody TodoDto reqDto,  @PathVariable Long pid){
-        Todo todoEntity = TodoDto.toEntity(reqDto);
-
-        try{
-            todoEntity.setProject(projectRepository.findById(pid).get());
-            List<Todo> entities = todoService.update(todoEntity);
-            List<TodoDto> resDtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
-
-            ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(resDtos).build();
-
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e){
-            String error = e.getMessage();
-            log.error(error);
-            ResponseDTO response = ResponseDTO.builder().error(error).build();
-
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-
-    @DeleteMapping("/{pid}/todos")
-    public ResponseEntity<?> deleteTodo(@RequestBody TodoDto reqDto, @PathVariable Long pid){
-        try{
-            Todo todoEntity = TodoDto.toEntity(reqDto);
-            todoEntity.setProject(projectRepository.findById(pid).get());
-
-            List<Todo> entities = todoService.delete(todoEntity);
-            List<TodoDto> resDtos = entities.stream().map(TodoDto::new).collect(Collectors.toList());
-
-            ResponseDTO<TodoDto> response = ResponseDTO.<TodoDto>builder().data(resDtos).build();
-
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e){
-            String error = e.getMessage();
-            ResponseDTO response = ResponseDTO.builder().error(error).build();
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-    //--------------------------- 프로젝트 TODOLIST 처리 END ----------------------------//
+  }
+  //--------------------------- 프로젝트 TODOLIST 처리 END ----------------------------//
 
 
 }
