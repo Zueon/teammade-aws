@@ -18,6 +18,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -42,6 +43,7 @@ public class ProjectController {
 
   // 프로젝트 리스트 받기
   @GetMapping("/list")
+  @Transactional
   public ResponseEntity<?> getProjects() {
     // Entities 받은 후 이를 바로 클라이언트로 반환 X
     // Entity를 DTO로 변환하여 보내야할 정보만 반환한다.
